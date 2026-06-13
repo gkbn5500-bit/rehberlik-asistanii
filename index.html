@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resmi Aylık Rehberlik Raporu Oluşturucu (Hatasız Sürüm)</title>
+    <!-- PDF Çıktı Alma Kütüphanesi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #2980b9;
+            --bg-color: #f5f6fa;
+            --border: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        header {
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: 25px;
+        }
+
+        header h1 { color: var(--primary); font-size: 22px; }
+        header p { font-size: 13px; color: #7f8c8d; margin-top: 5px; }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0 10px 0;
+            padding-left: 6px;
+            border-left: 4px solid var(--accent);
+        }
+
+        /* Giriş Formu Tasarımı */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full { grid-column: 1 / -1; }
+        
+        label { font-weight: 600; font-size: 13px; margin-bottom: 4px; color: var(--secondary); }
+        input, select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; }
+        
+        .weeks-dates-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .btn-box { display: flex; gap: 10px; margin: 25px 0; flex-wrap: wrap; }
+        button { padding: 13px 22px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; flex: 1; min-width: 170px; transition: all 0.2s; }
+        .btn-green { background: #27ae60; color: white; }
+        .btn-green:hover { background: #219653; }
+        .btn-blue { background: #2980b9; color: white; }
+        .btn-blue:hover { background: #2471a3; }
+        .btn-gray { background: #7f8c8d; color: white; }
+
+        /* RESMİ ŞABLON TASARIMI (BİREBİR image_ebc1cd.png GEOMETRİSİ) */
+        #reportOutput {
+            display: none;
+            background: #fff;
+            padding: 40px;
+            color: #000;
+            border: 1px solid #000;
+            max-width: 210mm;
+            margin: 0 auto;
+        }
+
+        .official-head { text-align: center; margin-bottom: 22px; line-height: 1.5; }
+        .official-head h2 { font-size: 14px; font-weight: bold; text-transform: uppercase; }
+        .official-head h3 { font-size: 12px; font-weight: bold; margin-top: 3px; }
+
+        .main-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 11.5px;
+        }
+
+        .main-table th, .main-table td {
+            border: 1px solid #000000;
+            padding: 6px 10px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .main-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .lbl-bold { font-weight: bold; background: #fafafa; width: 22%; }
+        .center-text { text-align: center !important; }
+        .uppercase-text { text-transform: uppercase !important; font-weight: bold; color: #000; }
+
+        .sign-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .sign-space { padding-top: 35px; line-height: 1.4; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            .no-print { display: none !important; }
+            #reportOutput { display: block !important; border: none; padding: 0; margin: 0; width: 100%; }
+            .main-table th { background-color: #fff !important; }
+            .main-table td, .main-table th { font-size: 11px; padding: 5px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="no-print">
+        <h1>Aylık Rehberlik Faaliyet Raporu Oluşturucu</h1>
+        <p>Tam Otomatik Kütüphane Modeli — %100 Senkronize Yeni Sürüm</p>
+    </header>
+
+    <div class="no-print">
+        <!-- 1. Adım Kurum Verileri -->
+        <div class="section-title">1. Adım: Kurum ve Sınıf Bilgilerini Girin</div>
+        <div class="form-grid">
+            <div class="form-group full">
+                <label for="okulName">Okul Adı</label>
+                <input type="text" id="okulName" value="Hasköy Ortaokulu">
+            </div>
+            <div class="form-group">
+                <label for="donemYil">Eğitim Öğretim Yılı</label>
+                <input type="text" id="donemYil" value="2025-2026">
+            </div>
+            <div class="form-group">
+                <label for="sinifSecim">Sınıf</label>
+                <select id="sinifSecim">
+                    <option value="5">5. Sınıf</option>
+                    <option value="6">6. Sınıf</option>
+                    <option value="7">7. Sınıf</option>
+                    <option value="8">8. Sınıf</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="aySecim">Ay</label>
+                <select id="aySecim">
+                    <option value="Eylül">Eylül</option>
+                    <option value="Ekim">Ekim</option>
+                    <option value="Kasım">Kasım</option>
+                    <option value="Aralık">Aralık</option>
+                    <option value="Ocak">Ocak</option>
+                    <option value="Şubat">Şubat</option>
+                    <option value="Mart">Mart</option>
+                    <option value="Nisan">Nisan</option>
+                    <option value="Mayıs">Mayıs</option>
+                    <option value="Haziran">Haziran</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="repNo">Rapor No</label>
+                <input type="text" id="repNo" value="1">
+            </div>
+            <div class="form-group">
+                <label for="repDate">Rapor Tarihi</label>
+                <input type="date" id="repDate">
+            </div>
+            <div class="form-group">
+                <label for="sinifOgretmen">Sınıf Rehber Öğretmeni</label>
+                <input type="text" id="sinifOgretmen" placeholder="Adı Soyadı">
+            </div>
+            <div class="form-group">
+                <label for="rehberOgretmen">Okul Rehber Öğretmeni</label>
+                <input type="text" id="rehberOgretmen" placeholder="Adı Soyadı">
+            </div>
+            <div class="form-group">
+                <label for="mudurName">Okul Müdürü</label>
+                <input type="text" id="mudurName" placeholder="Adı Soyadı">
+            </div>
+            <div class="form-group full">
+                <label>Haftalık Uygulama Tarihleri (Tablodaki Tarih Hücrelerine Yazılır)</label>
+                <div class="weeks-dates-grid">
+                    <input type="text" id="w1Date" placeholder="1. Hafta Tarihi (Örn: 08.09)">
+                    <input type="text" id="w2Date" placeholder="2. Hafta Tarihi">
+                    <input type="text" id="w3Date" placeholder="3. Hafta Tarihi">
+                    <input type="text" id="w4Date" placeholder="4. Hafta Tarihi">
+                </div>
+            </div>
+            <div class="form-group">
+                <label style="font-weight:bold; color:#000;">Sınıf Mevcudu (Toplam)</label>
+                <input type="number" id="popTotal" placeholder="Mevcut">
+            </div>
+            <div class="form-group">
+                <label>Kız Öğrenci Sayısı</label>
+                <input type="number" id="popGirl" placeholder="Kız Sayısı">
+            </div>
+            <div class="form-group">
+                <label>Erkek Öğrenci Sayısı</label>
+                <input type="number" id="popBoy" placeholder="Erkek Sayısı">
+            </div>
+        </div>
+
+        <!-- 2. Adım Serbest Çalışma Girişleri -->
+        <div class="section-title">2. Adım: Rehberlik Çalışma Detayları (İsteğe Bağlı)</div>
+        <div class="form-grid">
+            <div class="form-group full"><label for="txtTest">Uygulanan Test ve Anketler</label><input type="text" id="txtTest" placeholder="Uygulanan ölçek veya anket varsa yazınız."></div>
+            <div class="form-group full"><label for="txtVeli">Velilerle Yapılan Görüşmeler</label><input type="text" id="txtVeli" placeholder="Görüşülen veli grubu veya bireysel çalışma detayları."></div>
+            <div class="form-group full"><label for="txtOgr">Öğrencilerle Yapılan Görüşmeler</label><input type="text" id="txtOgr" placeholder="Bireysel veya grupla yapılan öğrenci görüşmeleri."></div>
+            <div class="form-group full"><label for="txtDiger">Diğer Çalışmalar</label><input type="text" id="txtDiger" placeholder="Pano düzenleme, kulüp çalışmaları veya seminerler."></div>
+        </div>
+    </div>
+
+    <div class="btn-box no-print">
+        <button class="btn-green" onclick="generateOfficialReport()">Planı Oluştur ve Doldur (Resmi Görünüm)</button>
+        <button class="btn-blue" onclick="window.print()">Yazdır</button>
+        <button class="btn-gray" onclick="saveAsPDF()">PDF Olarak Kaydet</button>
+    </div>
+
+    <!-- RESMİ RAPOR ÇIKTI ALANI -->
+    <div id="reportOutput">
+        <div class="official-head">
+            <h2>T.C. <br> <span id="outHeaderOkul">HASKÖY ORTAOKULU</span> MÜDÜRLÜĞÜ</h2>
+            <h3>REHBERLİK HİZMETLERİ AYLIK RAPORU</h3>
+        </div>
+
+        <table class="main-table">
+            <tr>
+                <td class="lbl-bold">Eğitim Öğretim Yılı</td>
+                <td id="outEgitimYil" style="width:28%;"></td>
+                <td class="lbl-bold">Rapor No / Tarih</td>
+                <td id="outNoTarih" style="width:28%;"></td>
+            </tr>
+            <tr>
+                <td class="lbl-bold">Sınıf / Şube</td>
+                <td id="outSinif"></td>
+                <td class="lbl-bold">Rapor Dönemi (Ay)</td>
+                <td id="outAy" style="font-weight: bold;"></td>
+            </tr>
+            <tr>
+                <td class="lbl-bold">Sınıf Mevcudu</td>
+                <td id="outMevcud"></td>
+                <td class="lbl-bold">Kız / Erkek Sayısı</td>
+                <td id="outKizErkek"></td>
+            </tr>
+            <tr>
+                <td class="lbl-bold">Sınıf Öğretmeni</td>
+                <td id="outOgretmenAd" colspan="3"></td>
+            </tr>
+        </table>
+
+        <!-- BİREBİR RESMİ ŞABLON BLOK TABLO (SIRA - TARİH - ETKİNLİK) -->
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">SIRA</th>
+                    <th style="width: 15%;">TARİH</th>
+                    <th style="width: 77%;">ETKİNLİK ÇALIŞMALARI</th>
+                </tr>
+            </thead>
+            <tbody id="dynamicActivityRows">
+                <!-- Veriler buraya tam isabetle kütüphaneden yerleşecek -->
+            </tbody>
+        </table>
+
+        <table class="main-table">
+            <thead>
+                <tr>
+                    <th style="width: 30%;">ÇALIŞMA TÜRÜ</th>
+                    <th style="width: 70%;">YAPILAN ÇALIŞMANIN AÇIKLAMASI / DETAYLARI</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="lbl-bold">Uygulanan Test ve Anketler</td>
+                    <td id="outTestVal">Müfredat dahilinde rutin çalışmalar yürütüldü.</td>
+                </tr>
+                <tr>
+                    <td class="lbl-bold">Velilerle Yapılan Görüşmeler</td>
+                    <td id="outVeliVal">Belirtilmedi.</td>
+                </tr>
+                <tr>
+                    <td class="lbl-bold">Öğrencilerle Yapılan Görüşmeler</td>
+                    <td id="outOgrVal">Gerekli rehberlik desteği sağlandı.</td>
+                </tr>
+                <tr>
+                    <td class="lbl-bold">Diğer Çalışmalar</td>
+                    <td id="outDigerVal">Sınıf rehberlik planına riayet edildi.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="sign-row">
+            <div class="sign-space">
+                <span id="sOgretmen">...</span><br>
+                Sınıf Rehber Öğretmeni
+            </div>
+            <div class="sign-space">
+                <span id="sRehber">...</span><br>
+                Okul Rehber Öğretmeni
+            </div>
+            <div class="sign-space">
+                <span id="sMudur">...</span><br>
+                Okul Müdürü <br> İmza / Mühür
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // TÜM SINIFLARIN 36 HAFTALIK SIRALI VE EKSİKSİZ RESMİ REHBERLİK KÜTÜPHANESİ
+    const mebSiralıKılavuzHafızası = {
+        "5": [
+            { ad: "GELİN TANIŞ OLALIM", alan: "Okula ve Okulun Çevresine Uyum", kazanim: "Okulun bölümlerini ve okulda çalışan personeli tanır." },
+            { ad: "GEZDİM, GÖRDÜM, YAZDIM", alan: "Okula ve Okulun Çevresine Uyum", kazanim: "Okulun yakınındaki çevreyi tanır." },
+            { ad: "KURALLAR OLMADAN ASLA", alan: "Okula ve Okulun Çevresine Uyum", kazanim: "Sınıf kurallarının oluşturulmasına katkı sağlar." },
+            { ad: "RENKLERLE RİSKLER", alan: "Okula ve Okulun Çevresine Uyum", kazanim: "Okul ve çevresinde risk oluşturabilecek durum ve ortamlara karşı kendini korur." },
+            { ad: "YARDIM BALONLARIM", alan: "Kişisel Güvenliğini Sağlama", kazanim: "Kimden, nereden, ne zaman ve nasıl yardım isteyebileceğini bilir." },
+            { ad: "KURALLAR İYİ Kİ VAR!", alan: "Okula ve Okulun Çevresine Uyum", kazanim: "Okul ve sınıf kurallarına uyulmadığında ortaya çıkabilecek sonuçları tartışır." },
+            { ad: "HAYALİMDEKİ OKUL VE SINIF", alan: "Okula ve Okulun Çevresine Uyum", kazanim: "Okul ve sınıf kurallarına uyar." },
+            { ad: "VAR MI YOK MU?", alan: "Okula ve Okulun Çevresine Uyum", kazanim: "Okulun eğitsel imkânları hakkında bilgi edinir." },
+            { ad: "SANATTA VE SPORDA HOŞLANDIKLARIMI KEŞFEDİYORUM!", alan: "Kariyer Farkındalığı", kazanim: "Sanatsal ve sportif etkinliklerden hoşlandıklarını ayırt eder." },
+            { ad: "HAZIRLANIYORUM, BAŞARIYORUM", alan: "Eğitsel Planlama ve Başarı", kazanim: "Okul hazırlığına ilişkin sorumluluklarını üstlenir." },
+            { ad: "ELLERİMİZ EL ELE", alan: "Okula ve Okulun Çevresine Uyum", kazanim: "Okulunun ve sınıfının bir üyesi olduğunu fark eder." },
+            { ad: "BENİM HAYALİM VAR", alan: "Eğitsel Planlama ve Başarı", kazanim: "Akademik gelişimi için amaç oluşturur." },
+            { ad: "BİLEĞİMDEKİ GÜÇ", alan: "Benlik Farkındalığı", kazanim: "Sahip olduğu karakter güçlerini fark eder." },
+            { ad: "SAHİP OLDUKLARIM", alan: "Benlik Farkındalığı", kazanim: "Sahip olduğu karakter güçlerini fark eder." },
+            { ad: "SENİNLE ÇOK İYİ ANLAŞACAĞIZ", alan: "Kişiler Arası Beceriler", kazanim: "Arkadaşlık kurmada karakter güçlerini kullanır." },
+            { ad: "ANLAMAK İÇİN DİNLİYORUM", alan: "Kişiler Arası Beceriler", kazanim: "İyi bir dinleyici olur." },
+            { ad: "NASIL ANLATSAM", alan: "Kişiler Arası Beceriler", kazanim: "Beden dilinin iletişimdeki önemini fark eder." },
+            { ad: "ETKİNLİK AKVARYUMUM", alan: "Kariyer Farkındalığı", kazanim: "Sanatsal ve sportif etkinliklerden başarabildiklerini ayırt eder." },
+            { ad: "GELDİM, GÖRDÜM, ÜRETTİM", alan: "Kariyer Farkındalığı", kazanim: "Çalışma ve üretmenin insan yaşamındaki önemini fark eder." },
+            { ad: "MESLEĞİMLE VAR OLUYORUM", alan: "Kariyer Farkındalığı", kazanim: "Bir meslek sahibi olmanın kendisi ve toplum için önemini fark eder." },
+            { ad: "YAŞAM YOLUM", alan: "Karar Verme", kazanim: "Geleceği hayal ederek yaşam amaçları oluşturur." },
+            { ad: "SÜRDÜRÜLEBİLİR ARKADAŞLIKLAR", alan: "Kişiler Arası Beceriler", kazanim: "Arkadaşlık ilişkilerini sürdürme konusunda yapabileceklerini bilir." },
+            { ad: "DUYGU SANDALYESİ", alan: "Duyguları Anlama ve Yönetme", kazanim: "Değişen duygu durumlarını fark eder." },
+            { ad: "BENİ DİNLİYOR MUSUN?", alan: "Duyguları Anlama ve Yönetme", kazanim: "Başkalarının duygu ve düşüncelerini anlamak için etkili dinleme stratejilerini kullanır." },
+            { ad: "GÖZLÜĞÜM ŞEKİL", alan: "Benlik Farkındalığı", kazanim: "Başkalarının bakış açısının kendi bakış açısından farklı olabileceğini kabul eder." },
+            { ad: "FARKLILIKLAR HARMONİSİ", alan: "Kişiler Arası Beceriler", kazanim: "Kültürel farklılıklara duyarlı bir bakış açısı geliştirir." },
+            { ad: "NEZAKET BALONLARIM", alan: "Kişiler Arası Beceriler", kazanim: "Yardım etme becerilerini kullanır." },
+            { ad: "BAŞKA BAŞKA BÜYÜYORUZ", alan: "Benlik Farkındalığı", kazanim: "Büyüme ve gelişme sürecinde bireysel farklılıklar olduğunu bilir." },
+            { ad: "BÜYÜME EVRENİ", alan: "Benlik Farkındalığı", kazanim: "Büyüme ve gelişmenin yaşamın doğal bir parçası olduğunu örneklerle açıklar." },
+            { ad: "SANAL GERÇEKLİK", alan: "Kişiler Arası Beceriler", kazanim: "Sanal arkadaşlığı, arkadaşlık ilişkileri kapsamında sorgular." },
+            { ad: "ÇATIŞMALAR HEP VAR", alan: "Kişiler Arası Beceriler", kazanim: "Çatışmanın ve anlaşmazlıkların yaşamın bir parçası olduğunu fark eder." },
+            { ad: "HOŞÇA KAL ARKADAŞIM!", alan: "Kişiler Arası Beceriler", kazanim: "Gerektiğinde arkadaşlığını sonlandırır." },
+            { ad: "AKADEMİK AMAÇ MERDİVENİM", alan: "Eğitsel Planlama ve Başarı", kazanim: "Akademik amaçlarını gerçekleştirme konusunda kendini değerlendirir." },
+            { ad: "KARARIMIN BELİRLEYİCİLERİ", alan: "Karar Verme", kazanim: "Karar verme sürecini etkileyen faktörleri açıklar." },
+            { ad: "KARAR VERİYORUM DERSLERİMİ SEÇİYORUM!", alan: "Kariyer Planlama", kazanim: "Ders seçiminde karar verme becerisini kullanır." },
+            { ad: "NELERİ HATIRLIYORUM?", alan: "Değerlendirme", kazanim: "Yıl sonu genel değerlendirmesi yapar ve süreç kazanımlarını pekiştirir." }
+        ],
+        "6": [
+            { ad: "ÜSTÜME İYİLİK SAĞLIK", alan: "Kişisel Güvenliği Sağlama", kazanim: "İyilik hâlini destekleyen davranışları yaşamında uygular." },
+            { ad: "ZAMAN YELPAZESİ", alan: "Eğitsel Planlama ve Başarı", kazanim: "Zamanı etkili kullanma yollarını açıklar." },
+            { ad: "HAZIRSAK BAŞLAYALIM", alan: "Eğitsel Planlama ve Başarı", kazanim: "Yeni eğitim öğretim yılı hedeflerini belirler." },
+            { ad: "YEŞEREN TOHUMLAR", alan: "Benlik Farkındalığı", kazanim: "Bireysel ilgi, yetenek ve hedeflerinin gelişimini takip eder." },
+            { ad: "KARAKTER GÜÇLERİM VE YAŞAMIM", alan: "Benlik Farkındalığı", kazanim: "Kişisel karakter güçlerini sosyal hayata aktarır." },
+            { ad: "GÖKKUŞAĞININ ALTINDAKİ HAZİNE", alan: "Duyguları Anlama Modülü", kazanim: "Duyguların çeşitliliğini ve işlevlerini ayırt eder." },
+            { ad: "YOLUMDAKİ ENGELLER", alan: "Eğitsel Planlama ve Başarı", kazanim: "Akademik başarısını engelleyen unsurları fark ederek çözüm yolları arar." },
+            { ad: "DUYGULARIMIZ RENGARENK", alan: "Duyguları Anlama ve Yönetme", kazanim: "Grup etkileşimlerinde duygularını dengeli bir şekilde yönetir." },
+            { ad: "NASIL SÖYLESEM Kİ?", alan: "Kişiler Arası İlişkiler", kazanim: "Duygu ve düşüncelerini yapıcı dille ifade eder." },
+            { ad: "ÇATIŞMA ÇÖZMEK BİZİM İŞİMİZ", alan: "Kişiler Arası İlişkiler", kazanim: "Kişiler arası çatışmaları yapıcı yollarla çözer." },
+            { ad: "ÇATIŞMALARIMI KENDİM ÇÖZEBİLİRİM", alan: "Kişiler Arası İlişkiler", kazanim: "Anlaşmazlıklarda arabuluculuk ve çözüm stratejilerini kullanır." },
+            { ad: "DUYGULARIMI FARK EDİYORUM", alan: "Duyguları Anlama ve Yönetme", kazanim: "Bedeninin duygularına verdiği tepkileri gözlemler." },
+            { ad: "PAYLAŞ, DİNLİYORUM!", alan: "Kişiler Arası İlişkiler", kazanim: "Sınıf tartışmalarında etkin dinleyici ve katılımcı rolü üstlenir." },
+            { ad: "NEDEN İLGİLENİYORUM?", alan: "Kariyer Farkındalığı", kazanim: "Kişisel ilgi alanlarının nedenlerini fark eder." },
+            { ad: "HAYDİ ANLAT İLGİLERİNİ!", alan: "Kariyer Farkındalığı", kazanim: "İlgileri ile dersleri ilişkilendirir." },
+            { ad: "YAŞAM AMAÇLARIMI PLANLIYORUM", alan: "Karar Verme / Planlama", kazanim: "Geleceğe yönelik amaçlarını planlar." },
+            { ad: "DUYGU KAPTANI", alan: "Duyguları Anlama ve Yönetme", kazanim: "Duygusal dalgalanmalarla sağlıklı baş etme yollarını kullanır." },
+            { ad: "İYİ OLUŞ ORMANIM", alan: "Duyguları Anlama ve Yönetme", kazanim: "İyi oluşunu destekleyen duyguların yaşamındaki önemini fark eder." },
+            { ad: "KATILIYORUM, ÖĞRENİYORUM, GELİŞİYORUM", alan: "Akademik Anlayış ve Sorumluluk", kazanim: "Okul içindeki ve dışındaki eğitsel ve sosyal etkinliklere katılmanın gelişimine katkılarını değerlendirir." },
+            { ad: "BAŞARISIZLIĞIMIN BAŞARI ÖYKÜSÜ", alan: "Eğitsel Planlama ve Başarı", kazanim: "Hatalardan ders çıkarmanın önemini kavrar." },
+            { ad: "ÖĞRENİYORUM, UYGULUYORUM, BAŞARIYORUM", alan: "Eğitsel Planlama ve Başarı", kazanim: "Verimli çalışma yöntemlerini derslerinde aktif uygular." },
+            { ad: "ENGELLERE TAKILMIYORUM", alan: "Eğitsel Planlama ve Başarı", kazanim: "Akademik zorluklar karşısında yılmazlık gösterir." },
+            { ad: "HAYIR DİYORUM, KENDİMİ KORUYORUM!", alan: "Kişisel Güvenliği Sağlama", kazanim: "Hayır diyebilme becerisiyle sınırlarını korur." },
+            { ad: "GELİŞİM TAKVİMİM", alan: "Benlik Farkındalığı", kazanim: "Fiziksel ve zihinsel büyüme aşamalarını listeler." },
+            { ad: "KARAR AĞACI", alan: "Karar Verme", kazanim: "Kararlarının olası sonuçlarını önceden değerlendirir." },
+            { ad: "BAŞARILARIM HAVADA UÇUŞUYOR", alan: "Benlik Farkındalığı", kazanim: "Başarılı olduğu durumlar için kendini takdir eder." },
+            { ad: "YETENEKLİ BALIĞIM", alan: "Kariyer Farkındalığı", kazanim: "Farklı alanlardaki yeteneklerini keşfeder." },
+            { ad: "YETENEK ÇEMBERLERİ-1", alan: "Kariyer Farkındalığı", kazanim: "Derslerin etkinliklerini yetenekleriyle ilişkilendirir." },
+            { ad: "YETENEK ÇEMBERLERİ-2", alan: "Kariyer Farkındalığı", kazanim: "Derslerin etkinliklerini yetenekleriyle ilişkilendirmeye devam eder." },
+            { ad: "ETKİLİYORUM, ETKİLENİYORUM!", alan: "Benlik Farkındalığı", kazanim: "Davranışlarının kendisine ve çevresine etkilerini fark eder." },
+            { ad: "DEĞİŞEBİLEN BEN", alan: "Benlik Farkındalığı", kazanim: "Kendini tanımlayan özelliklerin değişebilir olduğunu fark eder." },
+            { ad: "ZENGİN KİTAPLIĞIM", alan: "Kişiler Arası Beceriler", kazanim: "İnsanların farklı karakter güçlerine sahip olmasının kişiler arası ilişkilere zenginlik katacağını bilir." },
+            { ad: "SORUMLULUK AYRACIM", alan: "Kariyer Farkındalığı", kazanim: "Çalışarak bir şey üretmenin sorumluluğunu alır." },
+            { ad: "İLGİLERİMİZ VE MESLEKLER", alan: "Kariyer Planlama", kazanim: "Kendi ilgileri ile mesleklerin özelliklerini ilişkilendirir." },
+            { ad: "MESLEKLERE GÖTÜREN DERSLER", alan: "Kariyer Planlama", kazanim: "Derslerin mesleklerle ilişkisini açıklar." },
+            { ad: "NELERİ HATIRLIYORUM?", alan: "Değerlendirme", kazanim: "6. sınıf rehberlik kazanımlarını genel olarak özetler." }
+        ],
+        "7": [
+            { ad: "YENİ DURUM DEĞİŞEN DUYGUM", alan: "Benlik Farkındalığı / Ergenlik", kazanim: "Ergenlik dönemi fiziksel ve duygusal değişimlerini fark eder." },
+            { ad: "ETKİLİ ZAMAN YETKİLİ BEN", alan: "Eğitsel Planlama ve Başarı", kazanim: "Ders çalışma planı hazırlar." },
+            { ad: "ZAMAN VE BAŞARI YOLCULUĞU", alan: "Eğitsel Planlama ve Başarı", kazanim: "Başarıyı etkileyen faktörleri değerlendirir." },
+            { ad: "TARAFINI SEÇ", alan: "Kişiler Arası İlişkiler", kazanim: "Sosyal ilişkilerde adil ve tarafsız davranmanın önemini anlar." },
+            { ad: "ZAMANINDA TAMAMLA", alan: "Eğitsel Planlama ve Başarı", kazanim: "Ödev ve sorumluluklarını zaman tuzaklarına düşmeden bitirir." },
+            { ad: "İLGİMİ DE YETENEĞİMİ DE TANIYORUM", alan: "Kariyer Farkındalığı", kazanim: "İlgi ve yetenek alanları arasındaki farkları ayırt eder." },
+            { ad: "İLGİ HOBİ TABUSU", alan: "Kariyer Farkındalığı", kazanim: "Hobilerinin mesleki eğilimleriyle bağını kurar." },
+            { ad: "SENİN YILDIZIN", alan: "Benlik Farkındalığı", kazanim: "Kendise has benzersiz güçlü karakter özelliklerini ön plana çıkarır." },
+            { ad: "DURUMLAR DEĞİŞİK", alan: "Duyguları Anlama ve Yönetme", kazanim: "Farklı olaylar karşısında değişen duygu durumlarını normal karşılar." },
+            { ad: "NEREDE BU MESLEKLER?", alan: "Kariyer Farkındalığı", kazanim: "İş dünyasındaki yeni nesil meslek gruplarını araştırır." },
+            { ad: "SENİN HAKKIN BENİM HAKKIM", alan: "Toplusal Rolleri Kavrama", kazanim: "İnsan hakları ve kul hakkı gibi kavramları sosyal hayatta gözetir." },
+            { ad: "ÖĞRENME ANAHTARI!", alan: "Eğitsel Planlama ve Başarı", kazanim: "Etkili ve kalıcı öğrenme tekniklerini derslerinde kullanır." },
+            { ad: "ÖĞRENME İSTASYONLARI", alan: "Eğitsel Planlama ve Başarı", kazanim: "Farklı kaynaklardan bilgiye ulaşma ve işleme yollarını uygular." },
+            { ad: "BÜYÜK GÜÇ: TAKDİR", alan: "Kişiler Arası İlişkiler", kazanim: "Çevresindeki insanların başarılarını içtenlikle takdir eder." },
+            { ad: "YAPICI ÇÖZÜM MERKEZİ", alan: "Kişiler Arası İlişkiler", kazanim: "Kişiler arası çatışmalarda yapıcı çözüm yolları geliştirir." },
+            { ad: "AKTİF DİNLEYİCİYİM", alan: "Kişiler Arası İlişkiler", kazanim: "Karşısındaki kişinin sadece sözlerini değil duygularını da dinler." },
+            { ad: "BENİM GÜÇLÜ BELLEĞİM", alan: "Eğitsel Planlama ve Başarı", kazanim: "Hafıza geliştirme ve kodlama tekniklerini ders çalışırken kullanır." },
+            { ad: "SLOGANIMLA HAZIRIM", alan: "Eğitsel Planlama ve Başarı", kazanim: "Sınavlara hazırlanmayı etkileyen faktörleri açıklar." },
+            { ad: "PASTADAKİ PAYIM", alan: "Toplusal Rolleri Kavrama", kazanim: "Grup ve aile içi görevlerde üzerine düşen payı yerine getirir." },
+            { ad: "İPUCUNU ALIYORUM, TEPKİMİ VERİYORUM", alan: "Kişiler Arası İlişkiler", kazanim: "Sosyal ipuçlarını doğru değerlendirerek tepkilerini ayarlar." },
+            { ad: "GELİŞEN BEN'İN ÖYKÜSÜ", alan: "Benlik Farkındalığı", kazanim: "Eğitim hayatı boyunca yaşadığı zihinsel ve sosyal dönüşümü kaleme alır." },
+            { ad: "BİNBİR ÇEŞİT ZORBALIK", alan: "Kişisel Güvenliği Sağlama", kazanim: "Siber zorbalık ve psikolojik yıldırma taktiklerini ayırt eder." },
+            { ad: "GÜCÜNÜ GÖR, ZORBALIĞI YEN!", alan: "Kişisel Güvenliği Sağlama", kazanim: "Baskı durumlarında yasal başvuru kanalları ve okul idaresinden destek alır." },
+            { ad: "YETENEKLER SAHADA", alan: "Kariyer Farkındalığı", kazanim: "Sportif veya sanatsal yetilerini uygulamalı faaliyetlerde gösterir." },
+            { ad: "YETENEKLERİMLE MESLEKLERİN PEŞİNDEYİM", alan: "Kariyer Planlama", kazanim: "Yeteneklerine uygun meslek hedefleri listeler." },
+            { ad: "KONTROL BENDE, ÇEVRİMİÇİ GÜVENDE", alan: "Dijital Güvenlik", kazanim: "Güvenli internet kullanımı kurallarını sosyal medyada uygular." },
+            { ad: "KARAKTER GÜÇLERİ TERAZİSİ", alan: "Benlik Farkındalığı", kazanim: "Dengeli bir karakter için adalet ve ölçülülük güçlerini kullanır." },
+            { ad: "GÜCÜME GÜÇ KATIYORUM", alan: "Benlik Farkındalığı", kazanim: "İçsel motivasyon kaynaklarını harekete geçirir." },
+            { ad: "BASKIYI YÖNETME ZİNCİRİ", alan: "Kişiler Arası İlişkiler", kazanim: "Olumsuz arkadaş baskılarına karşı direnç geliştirir." },
+            { ad: "ÜÇ MUCİZEVİ GÜÇ", alan: "Duyguları Anlama ve Yönetme", kazanim: "Şükran, umut ve iyimserlik duygularının iyi oluşa katkısını bilir." },
+            { ad: "NE YAPTIĞIMIN FARKINDAYIM", alan: "Karar Verme", kazanim: "Günlük eylemlerinin sorumluluğunu üstlenir." },
+            { ad: "OKULUM HAYAT DOLU", alan: "Okula ve Okulun Çevresine Uyum", kazanim: "Okulun yaşamındaki yeri ve önemini fark eder." },
+            { ad: "KARAR VERME SÜRECİMİ NELER ETKİLEMİŞ?", alan: "Karar Verme", kazanim: "Bu zamana kadar verdiği kararları karar verme sürecini etkileyen faktörler açısından değerlendirir." },
+            { ad: "KARAR VERME MERDİVENİ", alan: "Karar Verme", kazanim: "Mantıklı karar verme basamaklarını hayatında uygular." },
+            { ad: "KARAR VERMEK, ZOR OLMASA GEREK", alan: "Karar Verme", kazanim: "Kişisel tercihlerinde bağımsız kararlar alabilir." },
+            { ad: "NELERİ HATIRLIYORUM?", alan: "Değerlendirme", kazanim: "7. Sınıf rehberlik dönemi kazanımlarını genel olarak özetler." }
+        ],
+        "8": [
+            { ad: "İYİ BAK İYİ YAŞA", alan: "Kişisel Güvenliği Sağlama", kazanim: "Öz bakım becerileri sergiler." },
+            { ad: "İLGİ VE YETENEKLERİM EL ELE", alan: "Kariyer Farkındalığı", kazanim: "Yapabildiği ve hoşlandığı etkinliklere dayalı olarak ilgi ve yeteneklerine örnekler verir." },
+            { ad: "İLGİ VE YETENEĞİM EL ELE", alan: "Kariyer Farkındalığı", kazanim: "İlgi ve yeteneklerine uygun üst öğrenim kurumlarını ve meslekleri eşleştirir." },
+            { ad: "YARIN DEĞİL BUGÜN", alan: "Eğitsel Planlama ve Başarı", kazanim: "Zamanı verimli kullanarak erteleme davranışının önüne geçer." },
+            { ad: "BEDEN İMGEM", alan: "Benlik Farkındalığı", kazanim: "Ergenlikteki bedensel değişimleriyle barışık olumlu benlik geliştirir." },
+            { ad: "HANGİSİ BENİM İÇİN UYGUN?", alan: "Kariyer Planlama / Lise Türleri", kazanim: "Yetenek ve ilgilerine hitap eden lise türlerini listeler." },
+            { ad: "BİLGİN DOĞRULTUSUNDA ADIM AT", alan: "Eğitsel Planlama ve Başarı", kazanim: "Üst öğretim kurumlarına geçiş sınavlarıyla ilgili bilgi edinir." },
+            { ad: "STRES KUTUSU", alan: "Duyguları Anlama ve Yönetme", kazanim: "Sınav hazırlık sürecindeki stres faktörlerini belirler." },
+            { ad: "STRES BANA ENGEL DEĞİL", alan: "Duyguları Anlama ve Yönetme", kazanim: "Stresle baş etmede nefes egzersizleri ve gevşeme tekniklerini uygular." },
+            { ad: "SINAVLAR VE DUYGULARIM", alan: "Eğitsel Planlama ve Başarı", kazanim: "Sınavlara ilişkin duygularını açıklar." },
+            { ad: "HEDEFLERİME ULAŞMAK İÇİN STRATEJİLERİM VAR MI?", alan: "Eğitsel Planlama ve Başarı", kazanim: "Akademik başarı için planlı tekrar ve soru çözme taktikleri geliştirir." },
+            { ad: "BENİM DEĞERLERİM", alan: "Benlik Farkındalığı / Değerler", kazanim: "Hayatına yön veren temel insani ve ahlaki değerleri fark eder." },
+            { ad: "MESLEK LOKANTASI", alan: "Kariyer Farkındalığı", kazanim: "Geleceğin mesleklerini ve istihdam olanaklarını araştırır." },
+            { ad: "ADIM ADIM HEDEFE", alan: "Kariyer Hazırlığı", kazanim: "Kısa ve uzun vadeli kariyer amaçları oluşturur." },
+            { ad: "YARDIM ARAYIŞI", alan: "Kişiler Arası Beceriler", kazanim: "İhtiyaç duyduğunda yardım arar." },
+            { ad: "ÖĞRENİYORUM AMA NASIL?", alan: "Eğitsel Planlama ve Başarı", kazanim: "Metabilişsel (öğrenmeyi öğrenme) becerilerini geliştirir." },
+            { ad: "GÜÇLÜ ÖĞRENİYORUM", alan: "Eğitsel Planlama ve Başarı", kazanim: "Kalıcı bellek teknikleriyle ders notlarını verimli hatırlar." },
+            { ad: "İYİ DÜŞÜN İYİ OLSUN", alan: "Duyguları Anlama ve Yönetme", kazanim: "Sınava dair olumsuz otomatik düşünceleri olumlularıyla değiştirir." },
+            { ad: "DUYGULARA YEŞİL IŞIK YAK!", alan: "Duyguları Anlama ve Yönetme", kazanim: "Kaygı ve heyecanın başarılması gereken işlerde tetikleyici rolünü kabul eder." },
+            { ad: "KARARIYLA VAR OLAN GENÇ", alan: "Karar Verme", kazanim: "Gelecek planlamasında kendi özgün kararlarının arkasında durur." },
+            { ad: "BEKLENTİLERİM VE AMAÇLARIM KARŞI KARŞIYA", alan: "Kişiler Arası İlişkiler", kazanim: "Aile beklentileri ile kendi mesleki amaçları arasında denge kurar." },
+            { ad: "BASKIYA KARŞI YOLLARIM VAR", alan: "Kişiler Arası İlişkiler", kazanim: "Sınav senesinde arkadaş çevresinin oluşturabileceği zaman tuzaklarına sınır koyar." },
+            { ad: "KENDİ GÜVENLİK AĞIMI ÖÖRÜYORUM", alan: "Kişisel Güvenliği Sağlama", kazanim: "Gerektiğinde psikolojik destek alabileceği kurumsal ağları tanır." },
+            { ad: "BİRAZ ZAMAN, BİRAZ ÇABA", alan: "Karar Verme", kazanim: "Yaşamda karşılaşılan zorlukların çaba ve zaman ile üstesinden gelinebileceğini fark eder." },
+            { ad: "UYGUN LİSE ARANIYOR", alan: "Kariyer Planlama", kazanim: "Kendi özellikleriyle seçmek istediği lise türlerinin özelliklerini ilişkilendirir." },
+            { ad: "SEÇİM YOLCULUĞUM", alan: "Kariyer Planlama", kazanim: "Lise tercihlerinde dikkat etmesi gereken resmi kuralları öğrenir." },
+            { ad: "ZORLUKLAR KARŞISINDA KARAKTER GÜÇLERİM İLE GÜÇLÜYÜM", alan: "Benlik Farkındalığı", kazanim: "Yılma durumlarında azim ve sabır güçlerini devreye sokar." },
+            { ad: "GÖNÜLLÜ OLMAK GEREK", alan: "Toplusal Rolleri Kavrama", kazanim: "Sosyal sorumluluk projelerinde yer almanın toplumsal faydalarını fark eder." },
+            { ad: "HAYAT BOYU ÖĞRENME NEDEN GEREKLİ?", alan: "Kariyer Farkındalığı", kazanim: "İnsanların hayatı boyunca öğrenmeye ve kendini geliştirmeye devam etmesi gerektiğini bilir." },
+            { ad: "HANGİ LİSE, GÖRÜŞÜN NE?", alan: "Kariyer Planlama", kazanim: "Akranlarıyla lise hedefleri hakkında fikir alışverişinde bulunur." },
+            { ad: "KARAR VERME SÜRECİM", alan: "Karar Verme", kazanim: "Geleceğini doğrudan etkileyek lise tercihlerinin karar aşamalarını yönetir." },
+            { ad: "KARARINI VER, SEÇİMİNİ YAP", alan: "Karar Verme", kazanim: "Tercih kılavuzunu inceleyerek taslak tercih listesini hazırlar." },
+            { ad: "KARAR TERAZİSİ", alan: "Karar Verme", kazanim: "Seçeneklerin artı ve eksi yönlerini tartarak mantıklı son karara ulaşır." },
+            { ad: "EMİN MİSİNİZ? SON KARARINIZ MI?", alan: "Kariyer Planlama", kazanim: "Tercih stratejisini okul psikolojik danışmanıyla nihai kontrolden geçirir." },
+            { ad: "DÜŞÜN, HİSSET, YAZ", alan: "Benlik Farkındalığı", kazanim: "Ortaokul dönemindeki kişisel gelişim serüvenini kağıda döker." },
+            { ad: "NELERİ HATIRLIYORUM?", alan: "Değerlendirme", kazanim: "LGS ve mezuniyet öncesinde tüm rehberlik dönemini genel olarak özetler." }
+        ]
+    };
+
+    // AKADEMİK TAKVİM AY-HAFTA DÖNÜŞTÜRÜCÜ SİHİRBAZI
+    const mebAkademikTakvimHaritası = {
+        "Eylül": [1, 2, 3, 4],
+        "Ekim": [5, 6, 7, 8],
+        "Kasım": [9, 10, 11, 12],
+        "Aralık": [13, 14, 15, 16],
+        "Ocak": [17, 18, 19, 20],
+        "Şubat": [21, 22, 23, 24],
+        "Mart": [25, 26, 27, 28],
+        "Nisan": [29, 30, 31, 32],
+        "Mayıs": [33, 34, 35, 36],
+        "Haziran": [36, 36, 36, 36]
+    };
+
+    // TAM SEYKRONİZE VE SAĞLAMLAŞTIRILMIŞ RAPOR MOTORU
+    function generateOfficialReport() {
+        const sinif = document.getElementById('sinifSecim').value;
+        const ay = document.getElementById('aySecim').value;
+
+        // Üst Alanlar Eşitleme
+        document.getElementById('outHeaderOkul').innerText = document.getElementById('okulName').value.toUpperCase();
+        document.getElementById('outEgitimYil').innerText = document.getElementById('donemYil').value + ' Eğitim-Öğretim Yılı';
+        
+        let rDateRaw = document.getElementById('repDate').value;
+        let rDate = rDateRaw ? rDateRaw.split('-').reverse().join('.') : '-';
+        document.getElementById('outNoTarih').innerText = document.getElementById('repNo').value + " / " + rDate;
+        
+        document.getElementById('outSinif').innerText = sinif + ". Sınıf";
+        document.getElementById('outAy').innerText = ay.toUpperCase() + " AYI";
+        document.getElementById('outMevcud').innerText = document.getElementById('popTotal').value || '-';
+        document.getElementById('outKizErkek').innerText = (document.getElementById('popGirl').value || '0') + " Kız / " + (document.getElementById('popBoy').value || '0') + " Erkek";
+        
+        let ogretmen = document.getElementById('sinifOgretmen').value || '-';
+        document.getElementById('outOgretmenAd').innerText = ogretmen;
+
+        // Ek Açıklama Alanlarını Doldurma
+        document.getElementById('outTestVal').innerText = document.getElementById('txtTest').value.trim() || 'Müfredat dahilinde rutin çalışmalar yürütüldü.';
+        document.getElementById('outVeliVal').innerText = document.getElementById('txtVeli').value.trim() || 'İhtiyaç duyulan durumlar doğrultusunda veli bilgilendirmeleri yapılmıştır.';
+        document.getElementById('outOgrVal').innerText = document.getElementById('txtOgr').value.trim() || 'Gerekli bireysel rehberlik desteği sağlandı.';
+        document.getElementById('outDigerVal').innerText = document.getElementById('txtDiger').value.trim() || 'Sınıf rehberlik planına riayet edildi.';
+
+        // İmzalar
+        document.getElementById('sOgretmen').innerText = ogretmen;
+        document.getElementById('sRehber').innerText = document.getElementById('rehberOgretmen').value || '-';
+        document.getElementById('sMudur').innerText = document.getElementById('mudurName').value || '-';
+
+        let dates = [
+            document.getElementById('w1Date').value || '-',
+            document.getElementById('w2Date').value || '-',
+            document.getElementById('w3Date').value || '-',
+            document.getElementById('w4Date').value || '-'
+        ];
+
+        const tbody = document.getElementById('dynamicActivityRows');
+        tbody.innerHTML = ''; 
+
+        // Akademik Takvime göre ilgili ayın 4 haftalık sıralı indislerini alıyoruz
+        let ilgiliHaftalar = mebAkademikTakvimHaritası[ay] || [1, 2, 3, 4];
+
+        // 4 Haftalık Resmi Satır ve Hücre Bloklarını Oluşturma (Birebir 2. Dosya Yapısı)
+        for (let i = 0; i < 4; i++) {
+            let karsilikGelenHaftaNo = ilgiliHaftalar[i];
+            let fAd = "";
+            let fKazanim = "";
+            let fYeterlik = "";
+
+            let sinifVerisi = mebSiralıKılavuzHafızası[sinif];
+            if (sinifVerisi && sinifVerisi[karsilikGelenHaftaNo - 1]) {
+                let kılavuzSatırı = sinifVerisi[karsilikGelenHaftaNo - 1];
+                fAd = kılavuzSatırı.ad;
+                fKazanim = kılavuzSatırı.kazanim;
+                fYeterlik = kılavuzSatırı.alan;
+            } else {
+                fAd = ay + " Ayı " + (i + 1) + ". Hafta Etkinliği";
+                fKazanim = "Müfredat takvimine uygun resmi kazanım maddesi.";
+                fYeterlik = "Genel Gelişim Alanı";
+            }
+
+            // Türkçe karakter duyarlı BÜYÜK HARF ayarı
+            fAd = fAd.toLocaleUpperCase('tr-TR');
+            let haftaEtiketi = `(${karsilikGelenHaftaNo}. HAFTA)`;
+
+            // 2. Dosyadaki (Word Şablonu) hücre mimarisi
+            let rowBlock = `
+                <tr>
+                    <td rowspan="3" class="center-text" style="font-weight:bold; width:8%;">${i + 1}</td>
+                    <td rowspan="3" class="center-text" style="width:15%;">${dates[i]}</td>
+                    <td><strong>YETERLİLİK ALANI:</strong> ${fYeterlik}</td>
+                </tr>
+                <tr>
+                    <td><strong>KAZANIM:</strong> ${fKazanim}</td>
+                </tr>
+                <tr>
+                    <td><strong>ETKİNLİĞİN ADI:</strong> <span class="uppercase-text">${fAd} ${haftaEtiketi}</span></td>
+                </tr>
+            `;
+            tbody.innerHTML += rowBlock;
+        }
+
+        // Çıktı Alanını Göster ve Oraya Kaydır
+        const outBox = document.getElementById('reportOutput');
+        outBox.style.display = 'block';
+        outBox.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function saveAsPDF() {
+        const element = document.getElementById('reportOutput');
+        if (element.style.display === 'none' || !element.style.display) {
+            alert("Lütfen önce planı oluşturun.");
+            return;
+        }
+        const opt = {
+            margin:       10,
+            filename:     'aylik_rehberlik_resmi_rapor.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+</body>
+</html>
